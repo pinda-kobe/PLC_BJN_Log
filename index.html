@@ -59,6 +59,22 @@
     @media (max-width: 600px) {
       .gauge-row, .chart-row { grid-template-columns: 1fr; }
     }
+    .progress-wrap { padding: 8px 0; }
+.progress-bar-bg {
+  width: 100%; height: 28px; background: #e0e0e0;
+  border-radius: 14px; overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%; width: 0%; border-radius: 14px;
+  background: #4CAF50;
+  transition: width 0.5s ease, background 0.5s ease;
+}
+.progress-info {
+  display: flex; justify-content: space-between;
+  margin-top: 6px;
+}
+.progress-pv { font-size: 22px; font-weight: bold; color: #333; }
+.progress-sv { font-size: 14px; color: #888; align-self: flex-end; }
   </style>
 </head>
 <body>
@@ -73,25 +89,33 @@
     <button onclick="resetFilter()" style="background:#888">Reset</button>
   </div>
 
-  <!-- Gauge -->
-  <div class="gauge-row">
-    <div class="card">
-      <h3>Zona 1 — Nilai Terkini</h3>
-      <div class="gauge-wrap">
-        <canvas id="gaugeZ1"></canvas>
-        <div class="gauge-label" id="gLabelZ1">—</div>
+ <!-- Progress Bar -->
+<div class="gauge-row">
+  <div class="card">
+    <h3>Zona 1 — Nilai Terkini</h3>
+    <div class="progress-wrap">
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="fillZ1"></div>
       </div>
-      <div class="gauge-sub" id="gSubZ1">SV: —</div>
-    </div>
-    <div class="card">
-      <h3>Zona 2 — Nilai Terkini</h3>
-      <div class="gauge-wrap">
-        <canvas id="gaugeZ2"></canvas>
-        <div class="gauge-label" id="gLabelZ2">—</div>
+      <div class="progress-info">
+        <span id="gLabelZ1" class="progress-pv">—</span>
+        <span id="gSubZ1" class="progress-sv">SV: —</span>
       </div>
-      <div class="gauge-sub" id="gSubZ2">SV: —</div>
     </div>
   </div>
+  <div class="card">
+    <h3>Zona 2 — Nilai Terkini</h3>
+    <div class="progress-wrap">
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="fillZ2"></div>
+      </div>
+      <div class="progress-info">
+        <span id="gLabelZ2" class="progress-pv">—</span>
+        <span id="gSubZ2" class="progress-sv">SV: —</span>
+      </div>
+    </div>
+  </div>
+</div>
 
   <!-- Line Charts -->
   <div class="chart-row">
@@ -130,46 +154,23 @@
 
     let allData = [];
     let chartZ1 = null, chartZ2 = null;
-    let gaugeZ1 = null, gaugeZ2 = null;
-
+    
     // Set default date range: hari ini
     const today = new Date().toISOString().split("T")[0];
     document.getElementById("dateFrom").value = today;
     document.getElementById("dateTo").value = today;
-
-    function initGauge(canvasId, max) {
-      const ctx = document.getElementById(canvasId).getContext("2d");
-      return new Chart(ctx, {
-        type: "doughnut",
-        data: {
-          datasets: [{
-            data: [0, max],
-            backgroundColor: ["#4CAF50", "#e0e0e0"],
-            borderWidth: 0,
-            circumference: 180,
-            rotation: 270
-          }]
-        },
-        options: {
-          responsive: false,
-          plugins: { legend: { display: false }, tooltip: { enabled: false } },
-          cutout: "75%"
-        }
-      });
-    }
-
-    function updateGauge(gauge, labelId, subId, pv, sv, max) {
-      const val = Math.min(pv, max);
-      gauge.data.datasets[0].data = [val, max - val];
-      const color = Math.abs(pv - sv) <= 10 ? "#4CAF50" :
-                    Math.abs(pv - sv) <= 30 ? "#FFC107" : "#F44336";
-      gauge.data.datasets[0].backgroundColor[0] = color;
-      gauge.update();
-      document.getElementById(labelId).textContent = pv + "°";
-      document.getElementById(labelId).style.color = color;
-      document.getElementById(subId).textContent = "SV: " + sv;
-    }
-
+    function updateProgress(fillId, labelId, subId, pv, sv, max) {
+  const pct = Math.min((pv / max) * 100, 100);
+  const color = Math.abs(pv - sv) <= 10 ? "#4CAF50" :
+                Math.abs(pv - sv) <= 30 ? "#FFC107" : "#F44336";
+  
+  document.getElementById(fillId).style.width = pct + "%";
+  document.getElementById(fillId).style.background = color;
+  document.getElementById(labelId).textContent = pv + "°";
+  document.getElementById(labelId).style.color = color;
+  document.getElementById(subId).textContent = "SV: " + sv + "°";
+}
+  
     function initLineChart(canvasId, label1, label2, color1, color2) {
       const ctx = document.getElementById(canvasId).getContext("2d");
       return new Chart(ctx, {
@@ -219,11 +220,11 @@
       chartZ2.update();
 
       // Gauge dari data terbaru
-      if (filtered.length > 0) {
-        const latest = filtered[filtered.length - 1];
-        updateGauge(gaugeZ1, "gLabelZ1", "gSubZ1", latest.pv_zona1, latest.sv_zona1, 500);
-        updateGauge(gaugeZ2, "gLabelZ2", "gSubZ2", latest.pv_zona2, latest.sv_zona2, 500);
-      }
+     if (filtered.length > 0) {
+  const latest = filtered[filtered.length - 1];
+  updateProgress("fillZ1", "gLabelZ1", "gSubZ1", latest.pv_zona1, latest.sv_zona1, 500);
+  updateProgress("fillZ2", "gLabelZ2", "gSubZ2", latest.pv_zona2, latest.sv_zona2, 500);
+}
 
       // Tabel
       const tbody = document.getElementById("tableBody");
@@ -274,8 +275,7 @@
     }
 
     // Init semua chart
-    gaugeZ1 = initGauge("gaugeZ1", 500);
-    gaugeZ2 = initGauge("gaugeZ2", 500);
+   
     chartZ1 = initLineChart("chartZ1", "PV Zona 1", "SV Zona 1", "#F44336", "#FF9800");
     chartZ2 = initLineChart("chartZ2", "PV Zona 2", "SV Zona 2", "#2196F3", "#9C27B0");
 
