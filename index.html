@@ -62,7 +62,8 @@
     .progress-wrap { padding: 8px 0; }
 .progress-bar-bg {
   width: 100%; height: 28px; background: #e0e0e0;
-  border-radius: 14px; overflow: hidden;
+  border-radius: 14px; overflow: visible;
+  position: relative;
 }
 .progress-bar-fill {
   height: 100%; width: 0%; border-radius: 14px;
@@ -160,14 +161,17 @@
     document.getElementById("dateFrom").value = today;
     document.getElementById("dateTo").value = today;
    function updateProgress(fillId, labelId, subId, pv, sv) {
-  const pct = Math.min((pv / sv) * 100, 100);
+  const pct = (pv / sv) * 100; // tidak dibatasi 100%
   const overflow = pv > sv;
   const color = overflow ? "#F44336" :
                 (sv - pv) <= 10 ? "#4CAF50" :
                 (sv - pv) <= 30 ? "#FFC107" : "#F44336";
   
-  document.getElementById(fillId).style.width = pct + "%";
-  document.getElementById(fillId).style.background = color;
+  const fill = document.getElementById(fillId);
+  fill.style.width = pct + "%";
+  fill.style.background = color;
+  fill.style.borderRadius = "14px";
+  
   document.getElementById(labelId).textContent = pv + "°";
   document.getElementById(labelId).style.color = color;
   document.getElementById(subId).textContent = "SV: " + sv + "°";
