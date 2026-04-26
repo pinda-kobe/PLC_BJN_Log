@@ -201,7 +201,7 @@
       sv:      "#FFB399", // FFFBDE
       upper:   "#72BAA9", // 
       lower:   "#D5E7B5", // 
-      svZ2:    "#FFFBDE", // 
+      svZ2:    "#FFB399", // 
     };
 
     let allData = [];
@@ -256,23 +256,13 @@
           datasets: [
             {
               label: pvLabel, data: [], borderColor: pvColor,
-              backgroundColor: svColor + "18", tension: 0.3,
+              backgroundColor: #FFFBDE + "18", tension: 0.3,
               pointRadius: 2, fill: true, borderWidth: 2
             },
             {
               label: "SV", data: [], borderColor: svColor,
               backgroundColor: "transparent", tension: 0,
               pointRadius: 0, borderDash: [6, 3], fill: false, borderWidth: 1.5
-            },
-            {
-              label: "Upper Limit", data: [], borderColor: C.upper,
-              backgroundColor: "transparent", tension: 0,
-              pointRadius: 0, borderDash: [4, 4], fill: false, borderWidth: 1.5
-            },
-            {
-              label: "Lower Limit", data: [], borderColor: C.lower,
-              backgroundColor: "transparent", tension: 0,
-              pointRadius: 0, borderDash: [4, 4], fill: false, borderWidth: 1.5
             }
           ]
         },
