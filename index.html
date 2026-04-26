@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Temperature Logging - Fryer Line4 </title>
+  <title>Temperature Logging - Fryer Line7 </title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -39,6 +39,7 @@
     .btn-primary { background: #546E7A; color: white; }
     .btn-reset { background: #ECEFF1; color: #546E7A; }
     .btn-limit { background: #FF5722; color: white; }
+    .btn-export { background: #1B5E20; color: white; }
 
     /* Cards */
     .two-col {
@@ -106,7 +107,7 @@
   </style>
 </head>
 <body>
-  <h2>Temperature Logging - Fryer Line4</h2>
+  <h2>Temperature Logging - Fryer Line7</h2>
   <div id="status">Memuat data...</div>
 
   <!-- Filter Bar -->
@@ -121,6 +122,7 @@
     </div>
     <button class="btn btn-primary" onclick="applyFilter()">Tampilkan</button>
     <button class="btn btn-reset" onclick="resetFilter()">Reset</button>
+    <button class="btn btn-export" onclick="exportExcel()">Export Excel</button>
     <div class="filter-divider"></div>
     <div class="filter-group">
       <label>Upper</label>
@@ -420,7 +422,50 @@
 
     chartZ1 = initChart("chartZ1", "PV Zona 1", C.sv, C.pvZ1);
     chartZ2 = initChart("chartZ2", "PV Zona 2", C.svZ2, C.pvZ2);
+  function exportExcel() {
+  const from = new Date(document.getElementById("dateFrom").value);
+  const to = new Date(document.getElementById("dateTo").value);
+  to.setHours(23, 59, 59);
 
+  const filtered = allData.filter(r => {
+    const t = new Date(r.timestamp);
+    return t >= from && t <= to;
+  });
+
+  if (filtered.length === 0) {
+    alert("Tidak ada data untuk rentang tanggal ini.");
+    return;
+  }
+
+  // Buat header
+  const header = ["Timestamp", "PV Zona 1", "PV Fryer Z1", "PV Zona 2", "PV Fryer Z2", "SV Zona 1", "SV Zona 2"];
+
+  // Buat rows
+  const rows = filtered.map(r => [
+    new Date(r.timestamp).toLocaleString("id-ID"),
+    r.pv_zona1,
+    r.pv_fryer_zona1,
+    r.pv_zona2,
+    r.pv_fryer_zona2,
+    r.sv_zona1,
+    r.sv_zona2
+  ]);
+
+  // Gabung jadi CSV dengan separator tab (bisa langsung buka di Excel)
+  const content = [header, ...rows]
+    .map(row => row.join("\t"))
+    .join("\n");
+
+  // Download
+  const blob = new Blob(["\uFEFF" + content], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const dateStr = document.getElementById("dateFrom").value;
+  a.href = url;
+  a.download = `Log_Fryer_Line7${dateStr}.xls`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
     fetchData();
     setInterval(fetchData, 30000);
   </script>
