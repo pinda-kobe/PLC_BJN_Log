@@ -257,12 +257,12 @@
           datasets: [
             {
               label: pvLabel, data: [], borderColor: pvColor,
-              backgroundColor: "#FFFBDE18", tension: 0.3,
+              backgroundColor: "transparent", tension: 0.3,
               pointRadius: 2, fill: true, borderWidth: 2
             },
             {
               label: "SV", data: [], borderColor: svColor,
-              backgroundColor: "#C2D099", tension: 0,
+              backgroundColor: "transparent", tension: 0,
               pointRadius: 0, borderDash: [6, 3], fill: false, borderWidth: 1.5
                      
             },
@@ -281,7 +281,17 @@
         options: {
           responsive: true,
           interaction: { mode: "index", intersect: false },
-          plugins: {
+          plugins: [{
+  id: 'canvasBg',
+  beforeDraw: (chart) => {
+    const ctx = chart.canvas.getContext('2d');
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-over';
+    ctx.fillStyle = '#F8F9FA';
+    ctx.fillRect(0, 0, chart.width, chart.height);
+    ctx.restore();
+  }
+}]
   legend: {
     position: "top",
     labels: { font: { size: 11 }, boxWidth: 20, padding: 10,
