@@ -62,13 +62,28 @@
     .progress-wrap { padding: 8px 0; }
 .progress-bar-bg {
   width: 100%; height: 28px; background: #e0e0e0;
-  border-radius: 14px; overflow: visible;
-  position: relative;
+  border-radius: 14px; position: relative; overflow: hidden;
+  <div class="progress-bar-bg">
+  <div class="progress-bar-fill" id="fillZ1"></div>
+  <div class="progress-bar-sv" id="svMarkerZ1"></div>
+</div>
+  <div class="progress-bar-bg">
+  <div class="progress-bar-fill" id="fillZ2"></div>
+  <div class="progress-bar-sv" id="svMarkerZ2"></div>
+</div>
 }
 .progress-bar-fill {
-  height: 100%; width: 0%; border-radius: 14px;
+  height: 100%; width: 0%;
+  border-radius: 14px;
   background: #4CAF50;
   transition: width 0.5s ease, background 0.5s ease;
+  position: absolute; top: 0; left: 0;
+}
+.progress-bar-sv {
+  position: absolute; top: 0; height: 100%;
+  width: 4px; background: white;
+  border-radius: 2px;
+  transition: left 0.5s ease;
 }
 .progress-info {
   display: flex; justify-content: space-between;
@@ -160,18 +175,19 @@
     const today = new Date().toISOString().split("T")[0];
     document.getElementById("dateFrom").value = today;
     document.getElementById("dateTo").value = today;
-   function updateProgress(fillId, labelId, subId, pv, sv) {
-  const pct = (pv / sv) * 100; // tidak dibatasi 100%
-  const overflow = pv > sv;
-  const color = overflow ? "#F44336" :
+  function updateProgress(fillId, svMarkerId, labelId, subId, pv, sv) {
+  const max = Math.max(pv, sv) * 1.2; // max selalu 20% lebih dari nilai tertinggi
+  const pvPct = (pv / max) * 100;
+  const svPct = (sv / max) * 100;
+
+  const color = pv > sv ? "#F44336" :
                 (sv - pv) <= 10 ? "#4CAF50" :
-                (sv - pv) <= 30 ? "#FFC107" : "#F44336";
-  
-  const fill = document.getElementById(fillId);
-  fill.style.width = pct + "%";
-  fill.style.background = color;
-  fill.style.borderRadius = "14px";
-  
+                (sv - pv) <= 30 ? "#FFC107" : "#2196F3";
+
+  document.getElementById(fillId).style.width = pvPct + "%";
+  document.getElementById(fillId).style.background = color;
+  document.getElementById(svMarkerId).style.left = svPct + "%";
+
   document.getElementById(labelId).textContent = pv + "°";
   document.getElementById(labelId).style.color = color;
   document.getElementById(subId).textContent = "SV: " + sv + "°";
@@ -228,8 +244,8 @@
       // Gauge dari data terbaru
      if (filtered.length > 0) {
   const latest = filtered[filtered.length - 1];
-  updateProgress("fillZ1", "gLabelZ1", "gSubZ1", latest.pv_zona1, latest.sv_zona1);
-  updateProgress("fillZ2", "gLabelZ2", "gSubZ2", latest.pv_zona2, latest.sv_zona2);
+  updateProgress("fillZ1", "svMarkerZ1", "gLabelZ1", "gSubZ1", latest.pv_zona1, latest.sv_zona1);
+updateProgress("fillZ2", "svMarkerZ2", "gLabelZ2", "gSubZ2", latest.pv_zona2, latest.sv_zona2);
 }
 
       // Tabel
