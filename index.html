@@ -3,146 +3,185 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Log Temperature PLC - Fryer BJN</title>
+  <title>Temperature Logging - Fryer Line4 </title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial; background: #f0f2f5; padding: 20px; }
-    h2 { color: #333; margin-bottom: 8px; }
-    #status { font-size: 13px; color: #888; margin-bottom: 16px; }
+    body { font-family: 'Arial', sans-serif; background: #ECEFF1; padding: 24px; }
 
+    h2 { color: #263238; margin-bottom: 4px; font-size: 22px; }
+    #status { font-size: 12px; color: #90A4AE; margin-bottom: 20px; }
+
+    /* Filter Bar */
     .filter-bar {
-      background: white; padding: 16px; border-radius: 8px;
-      margin-bottom: 20px; display: flex; gap: 16px; align-items: center;
-      flex-wrap: wrap; box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      background: white; padding: 14px 20px; border-radius: 10px;
+      margin-bottom: 20px; display: flex; gap: 12px; align-items: center;
+      flex-wrap: wrap; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      border-left: 4px solid #546E7A;
     }
-    .filter-bar label { font-size: 14px; color: #555; }
-    .filter-bar input {
-      padding: 6px 10px; border: 1px solid #ddd;
-      border-radius: 4px; font-size: 14px;
+    .filter-group { display: flex; align-items: center; gap: 8px; }
+    .filter-divider {
+      width: 1px; height: 32px; background: #ECEFF1; margin: 0 4px;
     }
-    .filter-bar button {
-      padding: 7px 18px; background: #4CAF50; color: white;
-      border: none; border-radius: 4px; cursor: pointer; font-size: 14px;
+    .filter-bar label { font-size: 13px; color: #546E7A; font-weight: 600; white-space: nowrap; }
+    .filter-bar input[type="date"], .filter-bar input[type="number"] {
+      padding: 6px 10px; border: 1px solid #CFD8DC;
+      border-radius: 6px; font-size: 13px; color: #37474F;
+      background: #F5F7F8; width: 150px;
     }
-    .filter-bar button.reset { background: #888; }
-    .filter-bar button:hover { opacity: 0.85; }
+    .filter-bar input[type="number"] { width: 80px; }
+    .btn {
+      padding: 7px 16px; border: none; border-radius: 6px;
+      cursor: pointer; font-size: 13px; font-weight: 600;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: #546E7A; color: white; }
+    .btn-reset { background: #ECEFF1; color: #546E7A; }
+    .btn-limit { background: #FF5722; color: white; }
 
+    /* Cards */
     .two-col {
       display: grid; grid-template-columns: 1fr 1fr;
       gap: 16px; margin-bottom: 20px;
     }
     .card {
-      background: white; border-radius: 8px; padding: 16px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      background: white; border-radius: 10px; padding: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
-    .card h3 { font-size: 15px; color: #444; margin-bottom: 14px; }
+    .card h3 {
+      font-size: 13px; font-weight: 700; color: #90A4AE;
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;
+    }
 
     /* Progress Bar */
-    .progress-wrap { padding: 4px 0; }
     .progress-bar-bg {
-      width: 100%; height: 28px; background: #e0e0e0;
-      border-radius: 14px; position: relative; overflow: hidden;
+      width: 100%; height: 24px; background: #ECEFF1;
+      border-radius: 12px; position: relative; overflow: hidden;
     }
     .progress-bar-fill {
-      height: 100%; width: 0%;
-      border-radius: 14px; background: #4CAF50;
+      height: 100%; width: 0%; border-radius: 12px;
       position: absolute; top: 0; left: 0;
-      transition: width 0.5s ease, background 0.5s ease;
+      transition: width 0.6s ease, background 0.6s ease;
     }
     .progress-bar-sv {
-      position: absolute; top: 0; height: 110%;
-      width: 4px; background: black; border-radius: 2px;
-      transition: left 0.5s ease;
+      position: absolute; top: -2px; height: 110%;
+      width: 3px; background: white; border-radius: 2px;
+      transition: left 0.6s ease; z-index: 2;
+      box-shadow: 0 0 4px rgba(0,0,0,0.3);
     }
     .progress-info {
-  position: relative; margin-top: 4px; height: 20px;
-}
-.progress-pv { font-size: 22px; font-weight: bold; }
-.progress-sv {
-  position: absolute; font-size: 12px; color: #888;
-  transform: translateX(-50%);
-  transition: left 0.5s ease;
-}
+      position: relative; margin-top: 6px; height: 24px;
+      display: flex; align-items: center;
+    }
+    .progress-pv { font-size: 28px; font-weight: 700; line-height: 1; }
+    .progress-sv-label {
+      position: absolute; font-size: 11px; color: #90A4AE;
+      transform: translateX(-50%); bottom: 0; white-space: nowrap;
+      transition: left 0.6s ease;
+    }
 
     /* Tabel */
-    .card-table { background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
-    .card-table h3 { font-size: 15px; color: #444; margin-bottom: 12px; }
+    .card-table {
+      background: white; border-radius: 10px; padding: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .card-table h3 {
+      font-size: 13px; font-weight: 700; color: #90A4AE;
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;
+    }
     table { border-collapse: collapse; width: 100%; }
-    th, td { border: 1px solid #ddd; padding: 9px 12px; text-align: center; font-size: 13px; }
-    th { background: #4CAF50; color: white; }
-    tr:nth-child(even) { background: #f9f9f9; }
+    th {
+      background: #546E7A; color: white;
+      padding: 10px 12px; text-align: center;
+      font-size: 12px; font-weight: 600; letter-spacing: 0.3px;
+    }
+    td { padding: 9px 12px; text-align: center; font-size: 13px; color: #37474F; border-bottom: 1px solid #ECEFF1; }
+    tr:hover td { background: #F5F7F8; }
 
-    @media (max-width: 600px) {
+    @media (max-width: 700px) {
       .two-col { grid-template-columns: 1fr; }
+      .filter-divider { display: none; }
     }
   </style>
 </head>
 <body>
-  <h2>Log Temperature PLC - Fryer BJN</h2>
+  <h2>Log Temperature PLC — Fryer BJN</h2>
   <div id="status">Memuat data...</div>
 
-  <!-- Filter -->
+  <!-- Filter Bar -->
   <div class="filter-bar">
-    <label>Dari: <input type="date" id="dateFrom"></label>
-    <label>Sampai: <input type="date" id="dateTo"></label>
-    <button onclick="applyFilter()">Tampilkan</button>
-    <button class="reset" onclick="resetFilter()">Reset</button>
+    <div class="filter-group">
+      <label>Dari</label>
+      <input type="date" id="dateFrom">
+    </div>
+    <div class="filter-group">
+      <label>Sampai</label>
+      <input type="date" id="dateTo">
+    </div>
+    <button class="btn btn-primary" onclick="applyFilter()">Tampilkan</button>
+    <button class="btn btn-reset" onclick="resetFilter()">Reset</button>
+    <div class="filter-divider"></div>
+    <div class="filter-group">
+      <label>Upper</label>
+      <input type="number" id="upperLimit" value="380" step="1">
+    </div>
+    <div class="filter-group">
+      <label>Lower</label>
+      <input type="number" id="lowerLimit" value="320" step="1">
+    </div>
+    <button class="btn btn-limit" onclick="applyLimits()">Terapkan</button>
   </div>
 
   <!-- Progress Bar -->
   <div class="two-col">
     <div class="card">
-      <h3>Zona 1 — PresentValue to SetValue</h3>
-      <div class="progress-wrap">
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fill" id="fillZ1"></div>
-          <div class="progress-bar-sv" id="svMarkerZ1"></div>
-        </div>
-        <div class="progress-info">
-          <span class="progress-pv" id="gLabelZ1">—</span>
-          <span class="progress-sv" id="gSubZ1">SV: —</span>
-        </div>
+      <h3>Zona 1 — PV vs SV</h3>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="fillZ1"></div>
+        <div class="progress-bar-sv" id="svMarkerZ1"></div>
+      </div>
+      <div class="progress-info">
+        <span class="progress-pv" id="gLabelZ1">—</span>
+        <span class="progress-sv-label" id="gSubZ1">SV: —</span>
       </div>
     </div>
     <div class="card">
-      <h3>Zona 2 — PresentValue to SetValue</h3>
-      <div class="progress-wrap">
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fill" id="fillZ2"></div>
-          <div class="progress-bar-sv" id="svMarkerZ2"></div>
-        </div>
-        <div class="progress-info">
-          <span class="progress-pv" id="gLabelZ2">—</span>
-          <span class="progress-sv" id="gSubZ2">SV: —</span>
-        </div>
+      <h3>Zona 2 — PV vs SV</h3>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="fillZ2"></div>
+        <div class="progress-bar-sv" id="svMarkerZ2"></div>
+      </div>
+      <div class="progress-info">
+        <span class="progress-pv" id="gLabelZ2">—</span>
+        <span class="progress-sv-label" id="gSubZ2">SV: —</span>
       </div>
     </div>
   </div>
 
-  <!-- Line Charts -->
+  <!-- Charts -->
   <div class="two-col">
     <div class="card">
-      <h3>Zona 1</h3>
-      <canvas id="chartZ1" height="120"></canvas>
+      <h3>Tren Zona 1</h3>
+      <canvas id="chartZ1" height="130"></canvas>
     </div>
     <div class="card">
-      <h3>Zona 2</h3>
-      <canvas id="chartZ2" height="120"></canvas>
+      <h3>Tren Zona 2</h3>
+      <canvas id="chartZ2" height="130"></canvas>
     </div>
   </div>
 
   <!-- Tabel -->
   <div class="card-table">
-    <h3>Data Historis</h3>
+    <h3>Histori Data</h3>
     <table>
       <thead>
         <tr>
           <th>Timestamp</th>
           <th>PV Zona 1</th>
-          <th>PV Fryer Zona 1</th>
+          <th>PV Fryer Z1</th>
           <th>PV Zona 2</th>
-          <th>PV Fryer Zona 2</th>
+          <th>PV Fryer Z2</th>
           <th>SV Zona 1</th>
           <th>SV Zona 2</th>
         </tr>
@@ -155,12 +194,29 @@
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwZsvr60fN44a8DzSAy_4z8jOLgjfD52I0CuDmS7G_OzZoMmVTnD1NSo8WRsObOGACr8g/exec";
     const TOKEN = "kobekobe";
 
+    // Palette
+    const C = {
+      pvZ1:    "#E53935", // Merah
+      pvZ2:    "#1E88E5", // Biru
+      sv:      "#FB8C00", // Orange
+      upper:   "#FF5722", // Deep Orange
+      lower:   "#00897B", // Teal
+      svZ2:    "#8E24AA", // Ungu
+    };
+
     let allData = [];
     let chartZ1 = null, chartZ2 = null;
+    let upperLimit = 380, lowerLimit = 320;
 
     const today = new Date().toISOString().split("T")[0];
     document.getElementById("dateFrom").value = today;
     document.getElementById("dateTo").value = today;
+
+    function applyLimits() {
+      upperLimit = parseFloat(document.getElementById("upperLimit").value);
+      lowerLimit = parseFloat(document.getElementById("lowerLimit").value);
+      applyFilter();
+    }
 
     // Progress Bar
     function updateProgress(fillId, svMarkerId, labelId, subId, pv, sv) {
@@ -168,26 +224,30 @@
       const pvPct = Math.min((pv / max) * 100, 100);
       const svPct = Math.min((sv / max) * 100, 100);
 
-      const color = pv > sv ? "#F44336" :
-                    (sv - pv) <= 10 ? "#4CAF50" :
-                    (sv - pv) <= 30 ? "#FFC107" : "#2196F3";
+      const diff = pv - sv;
+      const color = diff > 0 ? C.pvZ1 :
+                    Math.abs(diff) <= 10 ? "#43A047" :
+                    Math.abs(diff) <= 30 ? "#FB8C00" : C.pvZ2;
 
-      const fill = document.getElementById(fillId);
-      const marker = document.getElementById(svMarkerId);
-      const label = document.getElementById(labelId);
-      const sub = document.getElementById(subId);
-
-      fill.style.width = pvPct + "%";
-      fill.style.background = color;
-      marker.style.left = svPct + "%";
-      label.textContent = pv + "°";
-      label.style.color = color;
-      sub.textContent = "SV: " + sv + "°";
-      sub.style.left = svPct + "%";
+      document.getElementById(fillId).style.width = pvPct + "%";
+      document.getElementById(fillId).style.background = color;
+      document.getElementById(svMarkerId).style.left = svPct + "%";
+      document.getElementById(labelId).textContent = pv + "°";
+      document.getElementById(labelId).style.color = color;
+      document.getElementById(subId).style.left = svPct + "%";
+      document.getElementById(subId).textContent = "SV: " + sv + "°";
     }
 
-    // Line Chart
-    function initLineChart(canvasId, label1, label2, color1, color2) {
+    // Chart
+    function makeLimitLine(label, color, value, data_length) {
+      return {
+        label, borderColor: color, backgroundColor: "transparent",
+        borderDash: [4, 4], borderWidth: 1.5, pointRadius: 0,
+        data: Array(data_length).fill(value), tension: 0, fill: false
+      };
+    }
+
+    function initChart(canvasId, pvLabel, svColor, pvColor) {
       const ctx = document.getElementById(canvasId).getContext("2d");
       return new Chart(ctx, {
         type: "line",
@@ -195,23 +255,46 @@
           labels: [],
           datasets: [
             {
-              label: label1, data: [], borderColor: color1,
-              backgroundColor: color1 + "22", tension: 0.3,
-              pointRadius: 2, fill: true
+              label: pvLabel, data: [], borderColor: pvColor,
+              backgroundColor: pvColor + "18", tension: 0.3,
+              pointRadius: 2, fill: true, borderWidth: 2
             },
             {
-              label: label2, data: [], borderColor: color2,
-              backgroundColor: "transparent", tension: 0.3,
-              pointRadius: 2, borderDash: [5, 5], fill: false
+              label: "SV", data: [], borderColor: svColor,
+              backgroundColor: "transparent", tension: 0,
+              pointRadius: 0, borderDash: [6, 3], fill: false, borderWidth: 1.5
+            },
+            {
+              label: "Upper Limit", data: [], borderColor: C.upper,
+              backgroundColor: "transparent", tension: 0,
+              pointRadius: 0, borderDash: [4, 4], fill: false, borderWidth: 1.5
+            },
+            {
+              label: "Lower Limit", data: [], borderColor: C.lower,
+              backgroundColor: "transparent", tension: 0,
+              pointRadius: 0, borderDash: [4, 4], fill: false, borderWidth: 1.5
             }
           ]
         },
         options: {
           responsive: true,
-          plugins: { legend: { position: "top" } },
+          interaction: { mode: "index", intersect: false },
+          plugins: {
+            legend: {
+              position: "top",
+              labels: { font: { size: 11 }, boxWidth: 20, padding: 10 }
+            }
+          },
           scales: {
-            x: { ticks: { maxTicksLimit: 8, maxRotation: 30 } },
-            y: { beginAtZero: false }
+            x: {
+              ticks: { maxTicksLimit: 8, maxRotation: 30, font: { size: 11 } },
+              grid: { color: "#ECEFF1" }
+            },
+            y: {
+              beginAtZero: false,
+              ticks: { font: { size: 11 } },
+              grid: { color: "#ECEFF1" }
+            }
           }
         }
       });
@@ -222,23 +305,32 @@
         const d = new Date(r.timestamp);
         return d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
       });
+      const n = filtered.length;
 
+      // Zona 1
       chartZ1.data.labels = labels;
       chartZ1.data.datasets[0].data = filtered.map(r => r.pv_zona1);
       chartZ1.data.datasets[1].data = filtered.map(r => r.sv_zona1);
+      chartZ1.data.datasets[2].data = Array(n).fill(upperLimit);
+      chartZ1.data.datasets[3].data = Array(n).fill(lowerLimit);
       chartZ1.update();
 
+      // Zona 2
       chartZ2.data.labels = labels;
       chartZ2.data.datasets[0].data = filtered.map(r => r.pv_zona2);
       chartZ2.data.datasets[1].data = filtered.map(r => r.sv_zona2);
+      chartZ2.data.datasets[2].data = Array(n).fill(upperLimit);
+      chartZ2.data.datasets[3].data = Array(n).fill(lowerLimit);
       chartZ2.update();
 
+      // Progress bar
       if (filtered.length > 0) {
         const latest = filtered[filtered.length - 1];
         updateProgress("fillZ1", "svMarkerZ1", "gLabelZ1", "gSubZ1", latest.pv_zona1, latest.sv_zona1);
         updateProgress("fillZ2", "svMarkerZ2", "gLabelZ2", "gSubZ2", latest.pv_zona2, latest.sv_zona2);
       }
 
+      // Tabel
       const tbody = document.getElementById("tableBody");
       tbody.innerHTML = "";
       [...filtered].reverse().forEach(row => {
@@ -285,8 +377,8 @@
       }
     }
 
-    chartZ1 = initLineChart("chartZ1", "PV Zona 1", "SV Zona 1", "#F44336", "#FF9800");
-    chartZ2 = initLineChart("chartZ2", "PV Zona 2", "SV Zona 2", "#2196F3", "#9C27B0");
+    chartZ1 = initChart("chartZ1", "PV Zona 1", C.sv, C.pvZ1);
+    chartZ2 = initChart("chartZ2", "PV Zona 2", C.svZ2, C.pvZ2);
 
     fetchData();
     setInterval(fetchData, 30000);
