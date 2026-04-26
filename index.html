@@ -3,26 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Log PLC - BJN</title>
+  <title>Log Temperature PLC - BJN</title>
   <style>
     body { font-family: Arial; padding: 20px; background: #f5f5f5; }
     h2 { color: #333; }
     table { border-collapse: collapse; width: 100%; background: white; }
-    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
     th { background-color: #4CAF50; color: white; }
     tr:nth-child(even) { background-color: #f9f9f9; }
     #status { margin-bottom: 10px; color: gray; font-size: 14px; }
   </style>
 </head>
 <body>
-  <h2>Log Data PLC - D100</h2>
+  <h2>Log Temperature PLC - Fryer BJN</h2>
   <div id="status">Memuat data...</div>
   <table>
     <thead>
       <tr>
         <th>Timestamp</th>
-        <th>Register</th>
-        <th>Value</th>
+        <th>PV Zona 1</th>
+        <th>PV Fryer Zona 1</th>
+        <th>PV Zona 2</th>
+        <th>PV Fryer Zona 2</th>
+        <th>SV Zona 1</th>
+        <th>SV Zona 2</th>
       </tr>
     </thead>
     <tbody id="tableBody"></tbody>
@@ -30,7 +34,7 @@
 
   <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwZsvr60fN44a8DzSAy_4z8jOLgjfD52I0CuDmS7G_OzZoMmVTnD1NSo8WRsObOGACr8g/exec";
-    const TOKEN = "kobekobe";
+    const TOKEN = "BJN2026plc";
 
     async function fetchData() {
       document.getElementById("status").textContent = "Memuat data...";
@@ -45,13 +49,17 @@
           const tr = document.createElement("tr");
           tr.innerHTML = `
             <td>${row.timestamp}</td>
-            <td>${row.register}</td>
-            <td>${row.value}</td>
+            <td>${row.pv_zona1}</td>
+            <td>${row.pv_fryer_zona1}</td>
+            <td>${row.pv_zona2}</td>
+            <td>${row.pv_fryer_zona2}</td>
+            <td>${row.sv_zona1}</td>
+            <td>${row.sv_zona2}</td>
           `;
           tbody.appendChild(tr);
         });
 
-        document.getElementById("status").textContent = 
+        document.getElementById("status").textContent =
           "Terakhir diperbarui: " + new Date().toLocaleString("id-ID");
 
       } catch(err) {
@@ -60,7 +68,7 @@
     }
 
     fetchData();
-    setInterval(fetchData, 30000); // refresh tiap 30 detik
+    setInterval(fetchData, 30000);
   </script>
 </body>
 </html>
