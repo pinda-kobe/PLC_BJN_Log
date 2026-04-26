@@ -51,15 +51,19 @@
       transition: width 0.5s ease, background 0.5s ease;
     }
     .progress-bar-sv {
-      position: absolute; top: 0; height: 100%;
+      position: absolute; top: 0; height: 110%;
       width: 4px; background: black; border-radius: 2px;
       transition: left 0.5s ease;
     }
     .progress-info {
-      display: flex; justify-content: space-between; margin-top: 8px;
-    }
-    .progress-pv { font-size: 22px; font-weight: bold; }
-    .progress-sv { font-size: 14px; color: #888; align-self: flex-end; }
+  position: relative; margin-top: 4px; height: 20px;
+}
+.progress-pv { font-size: 22px; font-weight: bold; }
+.progress-sv {
+  position: absolute; font-size: 12px; color: #888;
+  transform: translateX(-50%);
+  transition: left 0.5s ease;
+}
 
     /* Tabel */
     .card-table { background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
@@ -179,6 +183,7 @@
       label.textContent = pv + "°";
       label.style.color = color;
       sub.textContent = "SV: " + sv + "°";
+      sub.style.left = svPct + "%";
     }
 
     // Line Chart
