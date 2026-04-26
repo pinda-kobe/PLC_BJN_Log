@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Temperature Logging - Fryer Line7 </title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Arial', sans-serif; background: white; padding: 24px; }
@@ -437,30 +438,29 @@
     return;
   }
 
-  const header = ["Timestamp","PV Zona 1","PV Fryer Z1","PV Zona 2","PV Fryer Z2","SV Zona 1","SV Zona 2"];
+  // Buat array of objects untuk SheetJS
+  const rows = filtered.map(r => ({
+    "Timestamp": new Date(r.timestamp).toLocaleString("id-ID"),
+    "PV Zona 1": r.pv_zona1,
+    "PV Fryer Z1": r.pv_fryer_zona1,
+    "PV Zona 2": r.pv_zona2,
+    "PV Fryer Z2": r.pv_fryer_zona2,
+    "SV Zona 1": r.sv_zona1,
+    "SV Zona 2": r.sv_zona2
+  }));
 
-  const rows = filtered.map(r => [
-    `"${new Date(r.timestamp).toLocaleString("id-ID")}"`,
-    r.pv_zona1,
-    r.pv_fryer_zona1,
-    r.pv_zona2,
-    r.pv_fryer_zona2,
-    r.sv_zona1,
-    r.sv_zona2
-  ]);
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Log PLC");
 
-  const content = [header, ...rows]
-    .map(row => row.join(","))
-    .join("\n");
+  // Auto column width
+  const cols = Object.keys(rows[0]).map(key => ({
+    wch: Math.max(key.length, 15)
+  }));
+  ws['!cols'] = cols;
 
-  const blob = new Blob(["\uFEFF" + content], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
   const dateStr = document.getElementById("dateFrom").value;
-  a.href = url;
-  a.download = `Log_Fryer_Line7_${dateStr}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+  XLSX.writeFile(wb, `Log_Fryer_Line7_${dateStr}.xlsx`);
 }
     fetchData();
     setInterval(fetchData, 30000);
