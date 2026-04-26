@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log PLC - BJN</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #f5f5f5; }
+    h2 { color: #333; }
+    table { border-collapse: collapse; width: 100%; background: white; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+    th { background-color: #4CAF50; color: white; }
+    tr:nth-child(even) { background-color: #f9f9f9; }
+    #status { margin-bottom: 10px; color: gray; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h2>Log Data PLC - D100</h2>
+  <div id="status">Memuat data...</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Timestamp</th>
+        <th>Register</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+
+  <script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbwZsvr60fN44a8DzSAy_4z8jOLgjfD52I0CuDmS7G_OzZoMmVTnD1NSo8WRsObOGACr8g/exec";
+    const TOKEN = "kobekobe";
+
+    async function fetchData() {
+      document.getElementById("status").textContent = "Memuat data...";
+      try {
+        const res = await fetch(`${GAS_URL}?token=${TOKEN}`);
+        const data = await res.json();
+
+        const tbody = document.getElementById("tableBody");
+        tbody.innerHTML = "";
+
+        data.forEach(row => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${row.timestamp}</td>
+            <td>${row.register}</td>
+            <td>${row.value}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        document.getElementById("status").textContent = 
+          "Terakhir diperbarui: " + new Date().toLocaleString("id-ID");
+
+      } catch(err) {
+        document.getElementById("status").textContent = "Gagal memuat data: " + err.message;
+      }
+    }
+
+    fetchData();
+    setInterval(fetchData, 30000); // refresh tiap 30 detik
+  </script>
+</body>
+</html>
