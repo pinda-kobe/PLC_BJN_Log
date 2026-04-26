@@ -160,7 +160,8 @@
     document.getElementById("dateFrom").value = today;
     document.getElementById("dateTo").value = today;
     function updateProgress(fillId, labelId, subId, pv, sv, max) {
-  const pct = Math.min((pv / max) * 100, 100);
+  const effectiveMax = Math.max(pv, sv, max);
+  const pct = Math.min((pv / effectiveMax) * 100, 100);
   const color = Math.abs(pv - sv) <= 10 ? "#4CAF50" :
                 Math.abs(pv - sv) <= 30 ? "#FFC107" : "#F44336";
   
