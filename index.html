@@ -450,7 +450,7 @@
   ]);
 
   const content = [header, ...rows]
-    .map(row => row.join(";"))
+    .map(row => row.join(","))
     .join("\n");
 
   const blob = new Blob(["\uFEFF" + content], { type: "text/csv;charset=utf-8" });
