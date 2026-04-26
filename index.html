@@ -8,8 +8,9 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial; background: #f0f2f5; padding: 20px; }
-    h2 { color: #333; margin-bottom: 16px; }
-    
+    h2 { color: #333; margin-bottom: 8px; }
+    #status { font-size: 13px; color: #888; margin-bottom: 16px; }
+
     .filter-bar {
       background: white; padding: 16px; border-radius: 8px;
       margin-bottom: 20px; display: flex; gap: 16px; align-items: center;
@@ -24,9 +25,10 @@
       padding: 7px 18px; background: #4CAF50; color: white;
       border: none; border-radius: 4px; cursor: pointer; font-size: 14px;
     }
-    .filter-bar button:hover { background: #43a047; }
+    .filter-bar button.reset { background: #888; }
+    .filter-bar button:hover { opacity: 0.85; }
 
-    .gauge-row {
+    .two-col {
       display: grid; grid-template-columns: 1fr 1fr;
       gap: 16px; margin-bottom: 20px;
     }
@@ -34,63 +36,42 @@
       background: white; border-radius: 8px; padding: 16px;
       box-shadow: 0 1px 4px rgba(0,0,0,0.1);
     }
-    .card h3 { font-size: 15px; color: #444; margin-bottom: 12px; }
+    .card h3 { font-size: 15px; color: #444; margin-bottom: 14px; }
 
-    .gauge-wrap { position: relative; width: 200px; margin: 0 auto; }
-    .gauge-wrap canvas { width: 200px !important; height: 110px !important; }
-    .gauge-label {
-      position: absolute; bottom: 0; width: 100%;
-      text-align: center; font-size: 22px; font-weight: bold; color: #333;
+    /* Progress Bar */
+    .progress-wrap { padding: 4px 0; }
+    .progress-bar-bg {
+      width: 100%; height: 28px; background: #e0e0e0;
+      border-radius: 14px; position: relative; overflow: hidden;
     }
-    .gauge-sub { text-align: center; font-size: 12px; color: #888; margin-top: 4px; }
-
-    .chart-row {
-      display: grid; grid-template-columns: 1fr 1fr;
-      gap: 16px; margin-bottom: 20px;
+    .progress-bar-fill {
+      height: 100%; width: 0%;
+      border-radius: 14px; background: #4CAF50;
+      position: absolute; top: 0; left: 0;
+      transition: width 0.5s ease, background 0.5s ease;
     }
+    .progress-bar-sv {
+      position: absolute; top: 0; height: 100%;
+      width: 4px; background: white; border-radius: 2px;
+      transition: left 0.5s ease;
+    }
+    .progress-info {
+      display: flex; justify-content: space-between; margin-top: 8px;
+    }
+    .progress-pv { font-size: 22px; font-weight: bold; }
+    .progress-sv { font-size: 14px; color: #888; align-self: flex-end; }
 
+    /* Tabel */
+    .card-table { background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+    .card-table h3 { font-size: 15px; color: #444; margin-bottom: 12px; }
     table { border-collapse: collapse; width: 100%; }
     th, td { border: 1px solid #ddd; padding: 9px 12px; text-align: center; font-size: 13px; }
     th { background: #4CAF50; color: white; }
     tr:nth-child(even) { background: #f9f9f9; }
 
-    #status { font-size: 13px; color: #888; margin-bottom: 12px; }
-
     @media (max-width: 600px) {
-      .gauge-row, .chart-row { grid-template-columns: 1fr; }
+      .two-col { grid-template-columns: 1fr; }
     }
-    .progress-wrap { padding: 8px 0; }
-.progress-bar-bg {
-  width: 100%; height: 28px; background: #e0e0e0;
-  border-radius: 14px; position: relative; overflow: hidden;
-  <div class="progress-bar-bg">
-  <div class="progress-bar-fill" id="fillZ1"></div>
-  <div class="progress-bar-sv" id="svMarkerZ1"></div>
-</div>
-  <div class="progress-bar-bg">
-  <div class="progress-bar-fill" id="fillZ2"></div>
-  <div class="progress-bar-sv" id="svMarkerZ2"></div>
-</div>
-}
-.progress-bar-fill {
-  height: 100%; width: 0%;
-  border-radius: 14px;
-  background: #4CAF50;
-  transition: width 0.5s ease, background 0.5s ease;
-  position: absolute; top: 0; left: 0;
-}
-.progress-bar-sv {
-  position: absolute; top: 0; height: 100%;
-  width: 4px; background: white;
-  border-radius: 2px;
-  transition: left 0.5s ease;
-}
-.progress-info {
-  display: flex; justify-content: space-between;
-  margin-top: 6px;
-}
-.progress-pv { font-size: 22px; font-weight: bold; color: #333; }
-.progress-sv { font-size: 14px; color: #888; align-self: flex-end; }
   </style>
 </head>
 <body>
@@ -102,39 +83,41 @@
     <label>Dari: <input type="date" id="dateFrom"></label>
     <label>Sampai: <input type="date" id="dateTo"></label>
     <button onclick="applyFilter()">Tampilkan</button>
-    <button onclick="resetFilter()" style="background:#888">Reset</button>
+    <button class="reset" onclick="resetFilter()">Reset</button>
   </div>
 
- <!-- Progress Bar -->
-<div class="gauge-row">
-  <div class="card">
-    <h3>Zona 1 — Nilai Terkini</h3>
-    <div class="progress-wrap">
-      <div class="progress-bar-bg">
-        <div class="progress-bar-fill" id="fillZ1"></div>
+  <!-- Progress Bar -->
+  <div class="two-col">
+    <div class="card">
+      <h3>Zona 1 — Nilai Terkini</h3>
+      <div class="progress-wrap">
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="fillZ1"></div>
+          <div class="progress-bar-sv" id="svMarkerZ1"></div>
+        </div>
+        <div class="progress-info">
+          <span class="progress-pv" id="gLabelZ1">—</span>
+          <span class="progress-sv" id="gSubZ1">SV: —</span>
+        </div>
       </div>
-      <div class="progress-info">
-        <span id="gLabelZ1" class="progress-pv">—</span>
-        <span id="gSubZ1" class="progress-sv">SV: —</span>
+    </div>
+    <div class="card">
+      <h3>Zona 2 — Nilai Terkini</h3>
+      <div class="progress-wrap">
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="fillZ2"></div>
+          <div class="progress-bar-sv" id="svMarkerZ2"></div>
+        </div>
+        <div class="progress-info">
+          <span class="progress-pv" id="gLabelZ2">—</span>
+          <span class="progress-sv" id="gSubZ2">SV: —</span>
+        </div>
       </div>
     </div>
   </div>
-  <div class="card">
-    <h3>Zona 2 — Nilai Terkini</h3>
-    <div class="progress-wrap">
-      <div class="progress-bar-bg">
-        <div class="progress-bar-fill" id="fillZ2"></div>
-      </div>
-      <div class="progress-info">
-        <span id="gLabelZ2" class="progress-pv">—</span>
-        <span id="gSubZ2" class="progress-sv">SV: —</span>
-      </div>
-    </div>
-  </div>
-</div>
 
   <!-- Line Charts -->
-  <div class="chart-row">
+  <div class="two-col">
     <div class="card">
       <h3>Tren Zona 1</h3>
       <canvas id="chartZ1" height="120"></canvas>
@@ -146,8 +129,8 @@
   </div>
 
   <!-- Tabel -->
-  <div class="card">
-    <h3 style="margin-bottom:12px">Histori Data</h3>
+  <div class="card-table">
+    <h3>Histori Data</h3>
     <table>
       <thead>
         <tr>
@@ -170,29 +153,35 @@
 
     let allData = [];
     let chartZ1 = null, chartZ2 = null;
-    
-    // Set default date range: hari ini
+
     const today = new Date().toISOString().split("T")[0];
     document.getElementById("dateFrom").value = today;
     document.getElementById("dateTo").value = today;
-  function updateProgress(fillId, svMarkerId, labelId, subId, pv, sv) {
-  const max = Math.max(pv, sv) * 1.2; // max selalu 20% lebih dari nilai tertinggi
-  const pvPct = (pv / max) * 100;
-  const svPct = (sv / max) * 100;
 
-  const color = pv > sv ? "#F44336" :
-                (sv - pv) <= 10 ? "#4CAF50" :
-                (sv - pv) <= 30 ? "#FFC107" : "#2196F3";
+    // Progress Bar
+    function updateProgress(fillId, svMarkerId, labelId, subId, pv, sv) {
+      const max = Math.max(pv, sv) * 1.2;
+      const pvPct = Math.min((pv / max) * 100, 100);
+      const svPct = Math.min((sv / max) * 100, 100);
 
-  document.getElementById(fillId).style.width = pvPct + "%";
-  document.getElementById(fillId).style.background = color;
-  document.getElementById(svMarkerId).style.left = svPct + "%";
+      const color = pv > sv ? "#F44336" :
+                    (sv - pv) <= 10 ? "#4CAF50" :
+                    (sv - pv) <= 30 ? "#FFC107" : "#2196F3";
 
-  document.getElementById(labelId).textContent = pv + "°";
-  document.getElementById(labelId).style.color = color;
-  document.getElementById(subId).textContent = "SV: " + sv + "°";
-}
-  
+      const fill = document.getElementById(fillId);
+      const marker = document.getElementById(svMarkerId);
+      const label = document.getElementById(labelId);
+      const sub = document.getElementById(subId);
+
+      fill.style.width = pvPct + "%";
+      fill.style.background = color;
+      marker.style.left = svPct + "%";
+      label.textContent = pv + "°";
+      label.style.color = color;
+      sub.textContent = "SV: " + sv + "°";
+    }
+
+    // Line Chart
     function initLineChart(canvasId, label1, label2, color1, color2) {
       const ctx = document.getElementById(canvasId).getContext("2d");
       return new Chart(ctx, {
@@ -203,12 +192,12 @@
             {
               label: label1, data: [], borderColor: color1,
               backgroundColor: color1 + "22", tension: 0.3,
-              pointRadius: 0, fill: true
+              pointRadius: 2, fill: true
             },
             {
               label: label2, data: [], borderColor: color2,
-              backgroundColor: color2 + "22", tension: 0.3,
-              pointRadius: 0, borderDash: [5, 5], fill: false
+              backgroundColor: "transparent", tension: 0.3,
+              pointRadius: 2, borderDash: [5, 5], fill: false
             }
           ]
         },
@@ -229,26 +218,22 @@
         return d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
       });
 
-      // Update Zona 1 chart
       chartZ1.data.labels = labels;
       chartZ1.data.datasets[0].data = filtered.map(r => r.pv_zona1);
       chartZ1.data.datasets[1].data = filtered.map(r => r.sv_zona1);
       chartZ1.update();
 
-      // Update Zona 2 chart
       chartZ2.data.labels = labels;
       chartZ2.data.datasets[0].data = filtered.map(r => r.pv_zona2);
       chartZ2.data.datasets[1].data = filtered.map(r => r.sv_zona2);
       chartZ2.update();
 
-      // Gauge dari data terbaru
-     if (filtered.length > 0) {
-  const latest = filtered[filtered.length - 1];
-  updateProgress("fillZ1", "svMarkerZ1", "gLabelZ1", "gSubZ1", latest.pv_zona1, latest.sv_zona1);
-updateProgress("fillZ2", "svMarkerZ2", "gLabelZ2", "gSubZ2", latest.pv_zona2, latest.sv_zona2);
-}
+      if (filtered.length > 0) {
+        const latest = filtered[filtered.length - 1];
+        updateProgress("fillZ1", "svMarkerZ1", "gLabelZ1", "gSubZ1", latest.pv_zona1, latest.sv_zona1);
+        updateProgress("fillZ2", "svMarkerZ2", "gLabelZ2", "gSubZ2", latest.pv_zona2, latest.sv_zona2);
+      }
 
-      // Tabel
       const tbody = document.getElementById("tableBody");
       tbody.innerHTML = "";
       [...filtered].reverse().forEach(row => {
@@ -270,7 +255,6 @@ updateProgress("fillZ2", "svMarkerZ2", "gLabelZ2", "gSubZ2", latest.pv_zona2, la
       const from = new Date(document.getElementById("dateFrom").value);
       const to = new Date(document.getElementById("dateTo").value);
       to.setHours(23, 59, 59);
-
       const filtered = allData.filter(r => {
         const t = new Date(r.timestamp);
         return t >= from && t <= to;
@@ -296,8 +280,6 @@ updateProgress("fillZ2", "svMarkerZ2", "gLabelZ2", "gSubZ2", latest.pv_zona2, la
       }
     }
 
-    // Init semua chart
-   
     chartZ1 = initLineChart("chartZ1", "PV Zona 1", "SV Zona 1", "#F44336", "#FF9800");
     chartZ2 = initLineChart("chartZ2", "PV Zona 2", "SV Zona 2", "#2196F3", "#9C27B0");
 
