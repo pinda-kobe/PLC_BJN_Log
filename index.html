@@ -159,11 +159,12 @@
     const today = new Date().toISOString().split("T")[0];
     document.getElementById("dateFrom").value = today;
     document.getElementById("dateTo").value = today;
-    function updateProgress(fillId, labelId, subId, pv, sv, max) {
-  const effectiveMax = Math.max(pv, sv, max);
-  const pct = Math.min((pv / effectiveMax) * 100, 100);
-  const color = Math.abs(pv - sv) <= 10 ? "#4CAF50" :
-                Math.abs(pv - sv) <= 30 ? "#FFC107" : "#F44336";
+   function updateProgress(fillId, labelId, subId, pv, sv) {
+  const pct = Math.min((pv / sv) * 100, 100);
+  const overflow = pv > sv;
+  const color = overflow ? "#F44336" :
+                (sv - pv) <= 10 ? "#4CAF50" :
+                (sv - pv) <= 30 ? "#FFC107" : "#F44336";
   
   document.getElementById(fillId).style.width = pct + "%";
   document.getElementById(fillId).style.background = color;
@@ -223,8 +224,8 @@
       // Gauge dari data terbaru
      if (filtered.length > 0) {
   const latest = filtered[filtered.length - 1];
-  updateProgress("fillZ1", "gLabelZ1", "gSubZ1", latest.pv_zona1, latest.sv_zona1, 500);
-  updateProgress("fillZ2", "gLabelZ2", "gSubZ2", latest.pv_zona2, latest.sv_zona2, 500);
+  updateProgress("fillZ1", "gLabelZ1", "gSubZ1", latest.pv_zona1, latest.sv_zona1);
+  updateProgress("fillZ2", "gLabelZ2", "gSubZ2", latest.pv_zona2, latest.sv_zona2);
 }
 
       // Tabel
