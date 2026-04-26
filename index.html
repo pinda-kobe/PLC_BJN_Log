@@ -422,7 +422,7 @@
 
     chartZ1 = initChart("chartZ1", "PV Zona 1", C.sv, C.pvZ1);
     chartZ2 = initChart("chartZ2", "PV Zona 2", C.svZ2, C.pvZ2);
-  function exportExcel() {
+ function exportExcel() {
   const from = new Date(document.getElementById("dateFrom").value);
   const to = new Date(document.getElementById("dateTo").value);
   to.setHours(23, 59, 59);
@@ -437,12 +437,10 @@
     return;
   }
 
-  // Buat header
-  const header = ["Timestamp", "PV Zona 1", "PV Fryer Z1", "PV Zona 2", "PV Fryer Z2", "SV Zona 1", "SV Zona 2"];
+  const header = ["Timestamp","PV Zona 1","PV Fryer Z1","PV Zona 2","PV Fryer Z2","SV Zona 1","SV Zona 2"];
 
-  // Buat rows
   const rows = filtered.map(r => [
-    new Date(r.timestamp).toLocaleString("id-ID"),
+    `"${new Date(r.timestamp).toLocaleString("id-ID")}"`,
     r.pv_zona1,
     r.pv_fryer_zona1,
     r.pv_zona2,
@@ -451,18 +449,16 @@
     r.sv_zona2
   ]);
 
-  // Gabung jadi CSV dengan separator tab (bisa langsung buka di Excel)
   const content = [header, ...rows]
-    .map(row => row.join("\t"))
+    .map(row => row.join(","))
     .join("\n");
 
-  // Download
-  const blob = new Blob(["\uFEFF" + content], { type: "text/plain;charset=utf-8" });
+  const blob = new Blob(["\uFEFF" + content], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   const dateStr = document.getElementById("dateFrom").value;
   a.href = url;
-  a.download = `Log_Fryer_Line7${dateStr}.xls`;
+  a.download = `Log_Fryer_Line7_${dateStr}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }
