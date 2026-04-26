@@ -136,7 +136,7 @@
   <!-- Progress Bar -->
   <div class="two-col">
     <div class="card">
-      <h3>Zona 1 — PV vs SV</h3>
+      <h3>Zona 1 — PresentVal to SetVal</h3>
       <div class="progress-bar-bg">
         <div class="progress-bar-fill" id="fillZ1"></div>
         <div class="progress-bar-sv" id="svMarkerZ1"></div>
@@ -147,7 +147,7 @@
       </div>
     </div>
     <div class="card">
-      <h3>Zona 2 — PV vs SV</h3>
+      <h3>Zona 2 — PresentVal to SetVal</h3>
       <div class="progress-bar-bg">
         <div class="progress-bar-fill" id="fillZ2"></div>
         <div class="progress-bar-sv" id="svMarkerZ2"></div>
@@ -162,18 +162,18 @@
   <!-- Charts -->
   <div class="two-col">
     <div class="card">
-      <h3>Tren Zona 1</h3>
+      <h3>Zona 1</h3>
       <canvas id="chartZ1" height="130"></canvas>
     </div>
     <div class="card">
-      <h3>Tren Zona 2</h3>
+      <h3>Zona 2</h3>
       <canvas id="chartZ2" height="130"></canvas>
     </div>
   </div>
 
   <!-- Tabel -->
   <div class="card-table">
-    <h3>Histori Data</h3>
+    <h3>Data Historis</h3>
     <table>
       <thead>
         <tr>
@@ -288,12 +288,12 @@
           scales: {
             x: {
               ticks: { maxTicksLimit: 8, maxRotation: 30, font: { size: 11 } },
-              grid: { color: "#ECEFF1" }
+              grid: { color: "#4682A9" }
             },
             y: {
               beginAtZero: false,
               ticks: { font: { size: 11 } },
-              grid: { color: "#ECEFF1" }
+              grid: { color: "#4682A9" }
             }
           }
         }
