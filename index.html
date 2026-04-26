@@ -3,69 +3,281 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Log Temperature PLC - BJN</title>
+  <title>Log Temperature PLC - Fryer BJN</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
-    body { font-family: Arial; padding: 20px; background: #f5f5f5; }
-    h2 { color: #333; }
-    table { border-collapse: collapse; width: 100%; background: white; }
-    th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
-    th { background-color: #4CAF50; color: white; }
-    tr:nth-child(even) { background-color: #f9f9f9; }
-    #status { margin-bottom: 10px; color: gray; font-size: 14px; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial; background: #f0f2f5; padding: 20px; }
+    h2 { color: #333; margin-bottom: 16px; }
+    
+    .filter-bar {
+      background: white; padding: 16px; border-radius: 8px;
+      margin-bottom: 20px; display: flex; gap: 16px; align-items: center;
+      flex-wrap: wrap; box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+    .filter-bar label { font-size: 14px; color: #555; }
+    .filter-bar input {
+      padding: 6px 10px; border: 1px solid #ddd;
+      border-radius: 4px; font-size: 14px;
+    }
+    .filter-bar button {
+      padding: 7px 18px; background: #4CAF50; color: white;
+      border: none; border-radius: 4px; cursor: pointer; font-size: 14px;
+    }
+    .filter-bar button:hover { background: #43a047; }
+
+    .gauge-row {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 16px; margin-bottom: 20px;
+    }
+    .card {
+      background: white; border-radius: 8px; padding: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+    .card h3 { font-size: 15px; color: #444; margin-bottom: 12px; }
+
+    .gauge-wrap { position: relative; width: 200px; margin: 0 auto; }
+    .gauge-wrap canvas { width: 200px !important; height: 110px !important; }
+    .gauge-label {
+      position: absolute; bottom: 0; width: 100%;
+      text-align: center; font-size: 22px; font-weight: bold; color: #333;
+    }
+    .gauge-sub { text-align: center; font-size: 12px; color: #888; margin-top: 4px; }
+
+    .chart-row {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 16px; margin-bottom: 20px;
+    }
+
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 9px 12px; text-align: center; font-size: 13px; }
+    th { background: #4CAF50; color: white; }
+    tr:nth-child(even) { background: #f9f9f9; }
+
+    #status { font-size: 13px; color: #888; margin-bottom: 12px; }
+
+    @media (max-width: 600px) {
+      .gauge-row, .chart-row { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
   <h2>Log Temperature PLC - Fryer BJN</h2>
   <div id="status">Memuat data...</div>
-  <table>
-    <thead>
-      <tr>
-        <th>Timestamp</th>
-        <th>PV Zona 1</th>
-        <th>PV Fryer Zona 1</th>
-        <th>PV Zona 2</th>
-        <th>PV Fryer Zona 2</th>
-        <th>SV Zona 1</th>
-        <th>SV Zona 2</th>
-      </tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-  </table>
+
+  <!-- Filter -->
+  <div class="filter-bar">
+    <label>Dari: <input type="date" id="dateFrom"></label>
+    <label>Sampai: <input type="date" id="dateTo"></label>
+    <button onclick="applyFilter()">Tampilkan</button>
+    <button onclick="resetFilter()" style="background:#888">Reset</button>
+  </div>
+
+  <!-- Gauge -->
+  <div class="gauge-row">
+    <div class="card">
+      <h3>Zona 1 — Nilai Terkini</h3>
+      <div class="gauge-wrap">
+        <canvas id="gaugeZ1"></canvas>
+        <div class="gauge-label" id="gLabelZ1">—</div>
+      </div>
+      <div class="gauge-sub" id="gSubZ1">SV: —</div>
+    </div>
+    <div class="card">
+      <h3>Zona 2 — Nilai Terkini</h3>
+      <div class="gauge-wrap">
+        <canvas id="gaugeZ2"></canvas>
+        <div class="gauge-label" id="gLabelZ2">—</div>
+      </div>
+      <div class="gauge-sub" id="gSubZ2">SV: —</div>
+    </div>
+  </div>
+
+  <!-- Line Charts -->
+  <div class="chart-row">
+    <div class="card">
+      <h3>Tren Zona 1</h3>
+      <canvas id="chartZ1" height="120"></canvas>
+    </div>
+    <div class="card">
+      <h3>Tren Zona 2</h3>
+      <canvas id="chartZ2" height="120"></canvas>
+    </div>
+  </div>
+
+  <!-- Tabel -->
+  <div class="card">
+    <h3 style="margin-bottom:12px">Histori Data</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>PV Zona 1</th>
+          <th>PV Fryer Zona 1</th>
+          <th>PV Zona 2</th>
+          <th>PV Fryer Zona 2</th>
+          <th>SV Zona 1</th>
+          <th>SV Zona 2</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
 
   <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwZsvr60fN44a8DzSAy_4z8jOLgjfD52I0CuDmS7G_OzZoMmVTnD1NSo8WRsObOGACr8g/exec";
     const TOKEN = "kobekobe";
 
+    let allData = [];
+    let chartZ1 = null, chartZ2 = null;
+    let gaugeZ1 = null, gaugeZ2 = null;
+
+    // Set default date range: hari ini
+    const today = new Date().toISOString().split("T")[0];
+    document.getElementById("dateFrom").value = today;
+    document.getElementById("dateTo").value = today;
+
+    function initGauge(canvasId, max) {
+      const ctx = document.getElementById(canvasId).getContext("2d");
+      return new Chart(ctx, {
+        type: "doughnut",
+        data: {
+          datasets: [{
+            data: [0, max],
+            backgroundColor: ["#4CAF50", "#e0e0e0"],
+            borderWidth: 0,
+            circumference: 180,
+            rotation: 270
+          }]
+        },
+        options: {
+          responsive: false,
+          plugins: { legend: { display: false }, tooltip: { enabled: false } },
+          cutout: "75%"
+        }
+      });
+    }
+
+    function updateGauge(gauge, labelId, subId, pv, sv, max) {
+      const val = Math.min(pv, max);
+      gauge.data.datasets[0].data = [val, max - val];
+      const color = Math.abs(pv - sv) <= 10 ? "#4CAF50" :
+                    Math.abs(pv - sv) <= 30 ? "#FFC107" : "#F44336";
+      gauge.data.datasets[0].backgroundColor[0] = color;
+      gauge.update();
+      document.getElementById(labelId).textContent = pv + "°";
+      document.getElementById(labelId).style.color = color;
+      document.getElementById(subId).textContent = "SV: " + sv;
+    }
+
+    function initLineChart(canvasId, label1, label2, color1, color2) {
+      const ctx = document.getElementById(canvasId).getContext("2d");
+      return new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: label1, data: [], borderColor: color1,
+              backgroundColor: color1 + "22", tension: 0.3,
+              pointRadius: 2, fill: true
+            },
+            {
+              label: label2, data: [], borderColor: color2,
+              backgroundColor: color2 + "22", tension: 0.3,
+              pointRadius: 2, borderDash: [5, 5], fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: "top" } },
+          scales: {
+            x: { ticks: { maxTicksLimit: 8, maxRotation: 30 } },
+            y: { beginAtZero: false }
+          }
+        }
+      });
+    }
+
+    function renderCharts(filtered) {
+      const labels = filtered.map(r => {
+        const d = new Date(r.timestamp);
+        return d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+      });
+
+      // Update Zona 1 chart
+      chartZ1.data.labels = labels;
+      chartZ1.data.datasets[0].data = filtered.map(r => r.pv_zona1);
+      chartZ1.data.datasets[1].data = filtered.map(r => r.sv_zona1);
+      chartZ1.update();
+
+      // Update Zona 2 chart
+      chartZ2.data.labels = labels;
+      chartZ2.data.datasets[0].data = filtered.map(r => r.pv_zona2);
+      chartZ2.data.datasets[1].data = filtered.map(r => r.sv_zona2);
+      chartZ2.update();
+
+      // Gauge dari data terbaru
+      if (filtered.length > 0) {
+        const latest = filtered[filtered.length - 1];
+        updateGauge(gaugeZ1, "gLabelZ1", "gSubZ1", latest.pv_zona1, latest.sv_zona1, 500);
+        updateGauge(gaugeZ2, "gLabelZ2", "gSubZ2", latest.pv_zona2, latest.sv_zona2, 500);
+      }
+
+      // Tabel
+      const tbody = document.getElementById("tableBody");
+      tbody.innerHTML = "";
+      [...filtered].reverse().forEach(row => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${new Date(row.timestamp).toLocaleString("id-ID")}</td>
+          <td>${row.pv_zona1}</td>
+          <td>${row.pv_fryer_zona1}</td>
+          <td>${row.pv_zona2}</td>
+          <td>${row.pv_fryer_zona2}</td>
+          <td>${row.sv_zona1}</td>
+          <td>${row.sv_zona2}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function applyFilter() {
+      const from = new Date(document.getElementById("dateFrom").value);
+      const to = new Date(document.getElementById("dateTo").value);
+      to.setHours(23, 59, 59);
+
+      const filtered = allData.filter(r => {
+        const t = new Date(r.timestamp);
+        return t >= from && t <= to;
+      });
+      renderCharts(filtered);
+    }
+
+    function resetFilter() {
+      document.getElementById("dateFrom").value = today;
+      document.getElementById("dateTo").value = today;
+      applyFilter();
+    }
+
     async function fetchData() {
-      document.getElementById("status").textContent = "Memuat data...";
       try {
         const res = await fetch(`${GAS_URL}?token=${TOKEN}`);
-        const data = await res.json();
-
-        const tbody = document.getElementById("tableBody");
-        tbody.innerHTML = "";
-
-        data.forEach(row => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${row.timestamp}</td>
-            <td>${row.pv_zona1}</td>
-            <td>${row.pv_fryer_zona1}</td>
-            <td>${row.pv_zona2}</td>
-            <td>${row.pv_fryer_zona2}</td>
-            <td>${row.sv_zona1}</td>
-            <td>${row.sv_zona2}</td>
-          `;
-          tbody.appendChild(tr);
-        });
-
+        allData = await res.json();
         document.getElementById("status").textContent =
           "Terakhir diperbarui: " + new Date().toLocaleString("id-ID");
-
+        applyFilter();
       } catch(err) {
         document.getElementById("status").textContent = "Gagal memuat data: " + err.message;
       }
     }
+
+    // Init semua chart
+    gaugeZ1 = initGauge("gaugeZ1", 500);
+    gaugeZ2 = initGauge("gaugeZ2", 500);
+    chartZ1 = initLineChart("chartZ1", "PV Zona 1", "SV Zona 1", "#F44336", "#FF9800");
+    chartZ2 = initLineChart("chartZ2", "PV Zona 2", "SV Zona 2", "#2196F3", "#9C27B0");
 
     fetchData();
     setInterval(fetchData, 30000);
