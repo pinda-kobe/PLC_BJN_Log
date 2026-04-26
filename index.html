@@ -281,8 +281,7 @@
         options: {
           responsive: true,
           interaction: { mode: "index", intersect: false },
-          plugins: [{
-  id: 'canvasBg',
+        plugins: [{  id: 'canvasBg',
   beforeDraw: (chart) => {
     const ctx = chart.canvas.getContext('2d');
     ctx.save();
@@ -291,7 +290,8 @@
     ctx.fillRect(0, 0, chart.width, chart.height);
     ctx.restore();
   }
-}]
+}]//
+        });          
   legend: {
     position: "top",
     labels: { font: { size: 11 }, boxWidth: 20, padding: 10,
