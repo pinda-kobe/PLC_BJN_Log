@@ -51,7 +51,7 @@
     }
     .card h3 {
       font-size: 13px; font-weight: 700; color: #90A4AE;
-      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;
+      text-transform: letter-spacing: 0.5px; margin-bottom: 14px;
     }
 
     /* Progress Bar */
@@ -256,7 +256,7 @@
           datasets: [
             {
               label: pvLabel, data: [], borderColor: pvColor,
-              backgroundColor: pvColor + "18", tension: 0.3,
+              backgroundColor: svColor + "18", tension: 0.3,
               pointRadius: 2, fill: true, borderWidth: 2
             },
             {
@@ -288,12 +288,12 @@
           scales: {
             x: {
               ticks: { maxTicksLimit: 8, maxRotation: 30, font: { size: 11 } },
-              grid: { color: "#4682A9" }
+              grid: { color: "#FFFBDE" }
             },
             y: {
               beginAtZero: false,
               ticks: { font: { size: 11 } },
-              grid: { color: "#4682A9" }
+              grid: { color: "#FFFBDE" }
             }
           }
         }
