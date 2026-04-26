@@ -281,17 +281,25 @@
         options: {
           responsive: true,
           interaction: { mode: "index", intersect: false },
-        plugins: [{  id: 'canvasBg',
-  beforeDraw: (chart) => {
-    const ctx = chart.canvas.getContext('2d');
-    ctx.save();
-    ctx.globalCompositeOperation = 'destination-over';
-    ctx.fillStyle = '#F8F9FA';
-    ctx.fillRect(0, 0, chart.width, chart.height);
-    ctx.restore();
+       plugins: {
+  legend: {
+    position: "top",
+    labels: { font: { size: 11 }, boxWidth: 20, padding: 10,
+      // Sembunyikan Upper & Lower dari legend
+      filter: (item) => !["Upper Limit", "Lower Limit"].includes(item.text)
+    }
+  },
+  tooltip: {
+    callbacks: {
+      // Hanya tampilkan PV dan SV di tooltip
+      label: (ctx) => {
+        if (["Upper Limit", "Lower Limit"].includes(ctx.dataset.label)) return null;
+        return ` ${ctx.dataset.label}: ${ctx.parsed.y}`;
+      }
+    }
   }
-}]//
- ,                 
+},
+                  
   legend: {
     position: "top",
     labels: { font: { size: 11 }, boxWidth: 20, padding: 10,
@@ -319,10 +327,18 @@
               ticks: { font: { size: 11 } },
               grid: { color: "#F5F5F5" }
             }
-          }
-        }
-      });
+          },plugins: [{
+    id: 'canvasBg',
+    beforeDraw: (chart) => {
+      const ctx = chart.canvas.getContext('2d');
+      ctx.save();
+      ctx.globalCompositeOperation = 'destination-over';
+      ctx.fillStyle = '#F1F8E9';
+      ctx.fillRect(0, 0, chart.width, chart.height);
+      ctx.restore();
     }
+  }]
+}); }
 
     function renderCharts(filtered) {
       const labels = filtered.map(r => {
