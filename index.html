@@ -127,11 +127,11 @@
     <div class="filter-divider"></div>
     <div class="filter-group">
       <label>Upper</label>
-      <input type="number" id="upperLimit" value="380" step="1">
+      <input type="number" id="upperLimit" value="190" step="1">
     </div>
     <div class="filter-group">
       <label>Lower</label>
-      <input type="number" id="lowerLimit" value="320" step="1">
+      <input type="number" id="lowerLimit" value="170" step="1">
     </div>
     <button class="btn btn-limit" onclick="applyLimits()">Terapkan</button>
   </div>
@@ -210,7 +210,7 @@
 
     let allData = [];
     let chartZ1 = null, chartZ2 = null;
-    let upperLimit = 380, lowerLimit = 320;
+    let upperLimit = 190, lowerLimit = 170;
 
     const today = new Date().toISOString().split("T")[0];
     document.getElementById("dateFrom").value = today;
