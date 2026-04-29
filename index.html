@@ -303,9 +303,9 @@
 
     function renderCharts(filtered) {
       const labels = filtered.map(r => {
-        const d = new Date(r.timestamp);
-        return d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
-      });
+  const d = parseTimestamp(r.timestamp);
+  return d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+});
       const n = filtered.length;
 
       chartZ1.data.labels = labels;
@@ -333,7 +333,7 @@
       [...filtered].reverse().forEach(row => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td>${new Date(row.timestamp).toLocaleString("id-ID")}</td>
+          <td>${parseTimestamp(row.timestamp).toLocaleString("id-ID")}</td>
           <td>${row.pv_zona1}</td>
           <td>${row.pv_fryer_zona1}</td>
           <td>${row.pv_zona2}</td>
@@ -344,17 +344,37 @@
         tbody.appendChild(tr);
       });
     }
-
+function parseTimestamp(str) {
+  // Format: "29/04/2026, 16.52.00"
+  if (!str) return new Date(0);
+  const clean = str.toString().trim();
+  // Coba parse langsung dulu
+  const direct = new Date(clean);
+  if (!isNaN(direct)) return direct;
+  
+  // Parse manual format Indonesia: DD/MM/YYYY, HH.mm.ss
+  const match = clean.match(/(\d{2})\/(\d{2})\/(\d{4}),?\s*(\d{2})\.(\d{2})/);
+  if (match) {
+    return new Date(
+      parseInt(match[3]),   // year
+      parseInt(match[2])-1, // month
+      parseInt(match[1]),   // day
+      parseInt(match[4]),   // hour
+      parseInt(match[5])    // minute
+    );
+  }
+  return new Date(0);
+}
     function applyFilter() {
-      const from = new Date(document.getElementById("dateFrom").value);
-      const to = new Date(document.getElementById("dateTo").value);
-      to.setHours(23, 59, 59);
-      const filtered = allData.filter(r => {
-        const t = new Date(r.timestamp);
-        return t >= from && t <= to;
-      });
-      renderCharts(filtered);
-    }
+  const from = new Date(document.getElementById("dateFrom").value);
+  const to = new Date(document.getElementById("dateTo").value);
+  to.setHours(23, 59, 59);
+  const filtered = allData.filter(r => {
+    const t = parseTimestamp(r.timestamp);
+    return t >= from && t <= to;
+  });
+  renderCharts(filtered);
+}
 
     function resetFilter() {
       document.getElementById("dateFrom").value = today;
