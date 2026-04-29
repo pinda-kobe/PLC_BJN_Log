@@ -1,469 +1,56 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Temperature Logging - Fryer Line7 </title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Arial', sans-serif; background: white; padding: 24px; }
+const SHEET_NAME = "Log PLC";
+const SPREADSHEET_ID = "1L9IUDJmCCPDXQPXVvz1YuBG5OtgYJwH0DhTJoaiFSgE";
+const ACCESS_TOKEN = "kobekobe";
 
-    h2 { color: #263238; margin-bottom: 4px; font-size: 22px; }
-    #status { font-size: 12px; color: #90A4AE; margin-bottom: 20px; }
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID)
+                                .getSheetByName(SHEET_NAME);
+    
+    sheet.appendRow([
+      data.timestamp,
+      data.pv_zona1,
+      data.pv_fryer_zona1,
+      data.pv_zona2,
+      data.pv_fryer_zona2,
+      data.sv_zona1,
+      data.sv_zona2
+    ]);
 
-    /* Filter Bar */
-    .filter-bar {
-      background: white; padding: 14px 20px; border-radius: 10px;
-      margin-bottom: 20px; display: flex; gap: 12px; align-items: center;
-      flex-wrap: wrap; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      border-left: 4px solid #546E7A;
-    }
-    .filter-group { display: flex; align-items: center; gap: 8px; }
-    .filter-divider {
-      width: 1px; height: 32px; background: #ECEFF1; margin: 0 4px;
-    }
-    .filter-bar label { font-size: 13px; color: #546E7A; font-weight: 600; white-space: nowrap; }
-    .filter-bar input[type="date"], .filter-bar input[type="number"] {
-      padding: 6px 10px; border: 1px solid #CFD8DC;
-      border-radius: 6px; font-size: 13px; color: #37474F;
-      background: #F5F7F8; width: 150px;
-    }
-    .filter-bar input[type="number"] { width: 80px; }
-    .btn {
-      padding: 7px 16px; border: none; border-radius: 6px;
-      cursor: pointer; font-size: 13px; font-weight: 600;
-      transition: opacity 0.2s;
-    }
-    .btn:hover { opacity: 0.85; }
-    .btn-primary { background: #546E7A; color: white; }
-    .btn-reset { background: #ECEFF1; color: #546E7A; }
-    .btn-limit { background: #FF5722; color: white; }
-    .btn-export { background: #1B5E20; color: white; }
+    return ContentService
+      .createTextOutput(JSON.stringify({ status: "ok" }))
+      .setMimeType(ContentService.MimeType.JSON);
 
-    /* Cards */
-    .two-col {
-      display: grid; grid-template-columns: 1fr 1fr;
-      gap: 16px; margin-bottom: 20px;
-    }
-    .card {
-      background: "#DCCCAC"; border-radius: 10px; padding: 18px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    }
-    .card h3 {
-      font-size: 13px; font-weight: 700; color: #90A4AE;
-      text-transform: letter-spacing: 0.5px; margin-bottom: 14px;
-    }
-
-    /* Progress Bar */
-    .progress-bar-bg {
-      width: 100%; height: 24px; background: #ECEFF1;
-      border-radius: 12px; position: relative; overflow: hidden;
-    }
-    .progress-bar-fill {
-      height: 100%; width: 0%; border-radius: 12px;
-      position: absolute; top: 0; left: 0;
-      transition: width 0.6s ease, background 0.6s ease;
-    }
-    .progress-bar-sv {
-      position: absolute; top: 0px; height: 110%;
-      width: 3px; background: black; border-radius: 2px;
-      transition: left 0.6s ease; z-index: 2;
-      box-shadow: 0 0 4px rgba(0,0,0,0.3);
-    }
-    .progress-info {
-      position: relative; margin-top: 6px; height: 24px;
-      display: flex; align-items: center;
-    }
-    .progress-pv { font-size: 28px; font-weight: 700; line-height: 1; }
-    .progress-sv-label {
-      position: absolute; font-size: 11px; color: #90A4AE;
-      transform: translateX(-50%); bottom: 0; white-space: nowrap;
-      transition: left 0.6s ease;
-    }
-
-    /* Tabel */
-    .card-table {
-      background: white; border-radius: 10px; padding: 18px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    }
-    .card-table h3 {
-      font-size: 13px; font-weight: 700; color: #90A4AE;
-      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;
-    }
-    table { border-collapse: collapse; width: 100%; }
-    th {
-      background: #546E7A; color: white;
-      padding: 10px 12px; text-align: center;
-      font-size: 12px; font-weight: 600; letter-spacing: 0.3px;
-    }
-    td { padding: 9px 12px; text-align: center; font-size: 13px; color: #37474F; border-bottom: 1px solid #ECEFF1; }
-    tr:hover td { background: #F5F7F8; }
-
-    @media (max-width: 700px) {
-      .two-col { grid-template-columns: 1fr; }
-      .filter-divider { display: none; }
-    }
-  </style>
-</head>
-<body>
-  <h2>Temperature Logging - Fryer Line7</h2>
-  <div id="status">Memuat data...</div>
-
-  <!-- Filter Bar -->
-  <div class="filter-bar">
-    <div class="filter-group">
-      <label>Dari</label>
-      <input type="date" id="dateFrom">
-    </div>
-    <div class="filter-group">
-      <label>Sampai</label>
-      <input type="date" id="dateTo">
-    </div>
-    <button class="btn btn-primary" onclick="applyFilter()">Tampilkan</button>
-    <button class="btn btn-reset" onclick="resetFilter()">Reset</button>
-    <button class="btn btn-export" onclick="exportExcel()">Export Excel</button>
-    <div class="filter-divider"></div>
-    <div class="filter-group">
-      <label>Upper</label>
-      <input type="number" id="upperLimit" value="190" step="1">
-    </div>
-    <div class="filter-group">
-      <label>Lower</label>
-      <input type="number" id="lowerLimit" value="170" step="1">
-    </div>
-    <button class="btn btn-limit" onclick="applyLimits()">Terapkan</button>
-  </div>
-
-  <!-- Progress Bar -->
-  <div class="two-col">
-    <div class="card">
-      <h3>Zona 1 — PresentVal to SetVal</h3>
-      <div class="progress-bar-bg">
-        <div class="progress-bar-fill" id="fillZ1"></div>
-        <div class="progress-bar-sv" id="svMarkerZ1"></div>
-      </div>
-      <div class="progress-info">
-        <span class="progress-pv" id="gLabelZ1">—</span>
-        <span class="progress-sv-label" id="gSubZ1">SV: —</span>
-      </div>
-    </div>
-    <div class="card">
-      <h3>Zona 2 — PresentVal to SetVal</h3>
-      <div class="progress-bar-bg">
-        <div class="progress-bar-fill" id="fillZ2"></div>
-        <div class="progress-bar-sv" id="svMarkerZ2"></div>
-      </div>
-      <div class="progress-info">
-        <span class="progress-pv" id="gLabelZ2">—</span>
-        <span class="progress-sv-label" id="gSubZ2">SV: —</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Charts -->
-  <div class="two-col">
-    <div class="card">
-      <h3>Zona 1</h3>
-      <canvas id="chartZ1" height="130"></canvas>
-    </div>
-    <div class="card">
-      <h3>Zona 2</h3>
-      <canvas id="chartZ2" height="130"></canvas>
-    </div>
-  </div>
-
-  <!-- Tabel -->
-  <div class="card-table">
-    <h3>Data Historis</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>Timestamp</th>
-          <th>PV Zona 1</th>
-          <th>PV Fryer Z1</th>
-          <th>PV Zona 2</th>
-          <th>PV Fryer Z2</th>
-          <th>SV Zona 1</th>
-          <th>SV Zona 2</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody"></tbody>
-    </table>
-  </div>
-
-  <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbz6OgNRkF-Oa_tB4mS-G50qKfrN4dXQav_MqeVy2R0qC2ImfZ9r98Z-VvXf24YvbaLWDQ/exec";
-    const TOKEN = "kobekobe";
-
-    // Palette
-    const C = {
-      pvZ1:    "#547792", //749BC2 
-      pvZ2:    "#124170", // 
-      sv:      "#FFB399", // FFFBDE
-      upper:   "#72BAA9", // 
-      lower:   "#72BAA9", // 
-      svZ2:    "#FFB399", // 
-      bgc:    "#FFFBDE", //
-    };
-
-    let allData = [];
-    let chartZ1 = null, chartZ2 = null;
-    let upperLimit = 190, lowerLimit = 170;
-
-    const today = new Date().toISOString().split("T")[0];
-    document.getElementById("dateFrom").value = today;
-    document.getElementById("dateTo").value = today;
-
-    function applyLimits() {
-      upperLimit = parseFloat(document.getElementById("upperLimit").value);
-      lowerLimit = parseFloat(document.getElementById("lowerLimit").value);
-      applyFilter();
-    }
-
-    // Progress Bar
-    function updateProgress(fillId, svMarkerId, labelId, subId, pv, sv) {
-      const max = Math.max(pv, sv) * 1.2;
-      const pvPct = Math.min((pv / max) * 100, 100);
-      const svPct = Math.min((sv / max) * 100, 100);
-
-      const diff = pv - sv;
-      const color = diff > 0 ? C.pvZ1 :
-                    Math.abs(diff) <= 10 ? "#43A047" :
-                    Math.abs(diff) <= 30 ? "#FB8C00" : C.pvZ2;
-
-      document.getElementById(fillId).style.width = pvPct + "%";
-      document.getElementById(fillId).style.background = color;
-      document.getElementById(svMarkerId).style.left = svPct + "%";
-      document.getElementById(labelId).textContent = pv + "°";
-      document.getElementById(labelId).style.color = color;
-      document.getElementById(subId).style.left = svPct + "%";
-      document.getElementById(subId).textContent = "SV: " + sv + "°";
-    }
-
-    // Chart
-    function makeLimitLine(label, color, value, data_length) {
-      return {
-        label, borderColor: color, backgroundColor: white,
-        borderDash: [4, 4], borderWidth: 1.5, pointRadius: 0,
-        data: Array(data_length).fill(value), tension: 0, fill: false
-      };
-    }
-
-    function initChart(canvasId, pvLabel, svColor, pvColor) {
-      const ctx = document.getElementById(canvasId).getContext("2d");
-      return new Chart(ctx, {
-        type: "line",
-        data: {
-          labels: [],
-          datasets: [
-            {
-              label: pvLabel, data: [], borderColor: pvColor,
-              backgroundColor: "transparent", tension: 0.3,
-              pointRadius: 2, fill: true, borderWidth: 2
-            },
-            {
-              label: "SV", data: [], borderColor: svColor,
-              backgroundColor: "transparent", tension: 0,
-              pointRadius: 0, borderDash: [6, 3], fill: false, borderWidth: 1.5
-                     
-            },
-            {
-              label: "Upper Limit", data: [], borderColor: C.upper,
-              backgroundColor: "transparent", tension: 0,
-              pointRadius: 0, borderDash: [4, 4], fill: false, borderWidth: 1.5
-            },
-            {
-              label: "Lower Limit", data: [], borderColor: C.lower,
-              backgroundColor: "transparent", tension: 0,
-              pointRadius: 0, borderDash: [4, 4], fill: false, borderWidth: 1.5
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          interaction: { mode: "index", intersect: false },
-       plugins: {
-  legend: {
-    position: "top",
-    labels: { font: { size: 11 }, boxWidth: 20, padding: 10,
-      // Sembunyikan Upper & Lower dari legend
-      filter: (item) => !["Upper Limit", "Lower Limit"].includes(item.text)
-    }
-  },
-  tooltip: {
-    callbacks: {
-      // Hanya tampilkan PV dan SV di tooltip
-      label: (ctx) => {
-        if (["Upper Limit", "Lower Limit"].includes(ctx.dataset.label)) return null;
-        return ` ${ctx.dataset.label}: ${ctx.parsed.y}`;
-      }
-    }
+  } catch(err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ status: "error", message: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
   }
-},
-                  
-  legend: {
-    position: "top",
-    labels: { font: { size: 11 }, boxWidth: 20, padding: 10,
-      // Sembunyikan Upper & Lower dari legend
-      filter: (item) => !["Upper Limit", "Lower Limit"].includes(item.text)
-    }
-  },
-  tooltip: {
-    callbacks: {
-      // Hanya tampilkan PV dan SV di tooltip
-      label: (ctx) => {
-        if (["Upper Limit", "Lower Limit","sv","svZ2"].includes(ctx.dataset.label)) return null;
-        return ` ${ctx.dataset.label}: ${ctx.parsed.y}`;
-      }
-    }
-  }
-},
-          scales: {
-            x: {
-              ticks: { maxTicksLimit: 8, maxRotation: 30, font: { size: 11 } },
-              grid: { color: "#F5F5F5" }
-            },
-            y: {
-              beginAtZero: false,
-              ticks: { font: { size: 11 } },
-              grid: { color: "#F5F5F5" }
-            }
-          },
-    plugins: [{
-    id: 'canvasBg',
-    beforeDraw: (chart) => {
-      const ctx = chart.canvas.getContext('2d');
-      ctx.save();
-      ctx.globalCompositeOperation = 'destination-over';
-      ctx.fillStyle = '#FFFDF1';
-      ctx.fillRect(0, 0, chart.width, chart.height);
-      ctx.restore();
-    }
-  }]
-}); }
-
-    function renderCharts(filtered) {
-      const labels = filtered.map(r => {
-        const d = new Date(r.timestamp);
-        return d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
-      });
-      const n = filtered.length;
-
-      // Zona 1
-      chartZ1.data.labels = labels;
-      chartZ1.data.datasets[0].data = filtered.map(r => r.pv_zona1);
-      chartZ1.data.datasets[1].data = filtered.map(r => r.sv_zona1);
-      chartZ1.data.datasets[2].data = Array(n).fill(upperLimit);
-      chartZ1.data.datasets[3].data = Array(n).fill(lowerLimit);
-      chartZ1.update();
-
-      // Zona 2
-      chartZ2.data.labels = labels;
-      chartZ2.data.datasets[0].data = filtered.map(r => r.pv_zona2);
-      chartZ2.data.datasets[1].data = filtered.map(r => r.sv_zona2);
-      chartZ2.data.datasets[2].data = Array(n).fill(upperLimit);
-      chartZ2.data.datasets[3].data = Array(n).fill(lowerLimit);
-      chartZ2.update();
-
-      // Progress bar
-      if (filtered.length > 0) {
-        const latest = filtered[filtered.length - 1];
-        updateProgress("fillZ1", "svMarkerZ1", "gLabelZ1", "gSubZ1", latest.pv_zona1, latest.sv_zona1);
-        updateProgress("fillZ2", "svMarkerZ2", "gLabelZ2", "gSubZ2", latest.pv_zona2, latest.sv_zona2);
-      }
-
-      // Tabel
-      const tbody = document.getElementById("tableBody");
-      tbody.innerHTML = "";
-      [...filtered].reverse().forEach(row => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${new Date(row.timestamp).toLocaleString("id-ID")}</td>
-          <td>${row.pv_zona1}</td>
-          <td>${row.pv_fryer_zona1}</td>
-          <td>${row.pv_zona2}</td>
-          <td>${row.pv_fryer_zona2}</td>
-          <td>${row.sv_zona1}</td>
-          <td>${row.sv_zona2}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    function applyFilter() {
-      const from = new Date(document.getElementById("dateFrom").value);
-      const to = new Date(document.getElementById("dateTo").value);
-      to.setHours(23, 59, 59);
-      const filtered = allData.filter(r => {
-        const t = new Date(r.timestamp);
-        return t >= from && t <= to;
-      });
-      renderCharts(filtered);
-    }
-
-    function resetFilter() {
-      document.getElementById("dateFrom").value = today;
-      document.getElementById("dateTo").value = today;
-      applyFilter();
-    }
-
-    async function fetchData() {
-      try {
-        const res = await fetch(`${GAS_URL}?token=${TOKEN}`);
-        allData = await res.json();
-        document.getElementById("status").textContent =
-          "Terakhir diperbarui: " + new Date().toLocaleString("id-ID");
-        applyFilter();
-      } catch(err) {
-        document.getElementById("status").textContent = "Gagal memuat data: " + err.message;
-      }
-    }
-
-    chartZ1 = initChart("chartZ1", "PV Zona 1", C.sv, C.pvZ1);
-    chartZ2 = initChart("chartZ2", "PV Zona 2", C.svZ2, C.pvZ2);
- function exportExcel() {
-  const from = new Date(document.getElementById("dateFrom").value);
-  const to = new Date(document.getElementById("dateTo").value);
-  to.setHours(23, 59, 59);
-
-  const filtered = allData.filter(r => {
-    const t = new Date(r.timestamp);
-    return t >= from && t <= to;
-  });
-
-  if (filtered.length === 0) {
-    alert("Tidak ada data untuk rentang tanggal ini.");
-    return;
-  }
-
-  // Buat array of objects untuk SheetJS
-  const rows = filtered.map(r => ({
-    "Timestamp": new Date(r.timestamp).toLocaleString("id-ID"),
-    "PV Zona 1": r.pv_zona1,
-    "PV Fryer Z1": r.pv_fryer_zona1,
-    "PV Zona 2": r.pv_zona2,
-    "PV Fryer Z2": r.pv_fryer_zona2,
-    "SV Zona 1": r.sv_zona1,
-    "SV Zona 2": r.sv_zona2
-  }));
-
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Log PLC");
-
-  // Auto column width
-  const cols = Object.keys(rows[0]).map(key => ({
-    wch: Math.max(key.length, 15)
-  }));
-  ws['!cols'] = cols;
-
-  const dateStr = document.getElementById("dateFrom").value;
-  XLSX.writeFile(wb, `Log_Fryer_Line7_${dateStr}.xlsx`);
 }
-    fetchData();
-    setInterval(fetchData, 30000);
-  </script>
-</body>
-</html>
+
+function doGet(e) {
+  if (!e.parameter.token || e.parameter.token !== ACCESS_TOKEN) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ error: "Access denied" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID)
+                              .getSheetByName(SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+  
+  const result = data.slice(1).map(row => ({
+    timestamp: row[0],
+    pv_zona1: row[1],
+    pv_fryer_zona1: row[2],
+    pv_zona2: row[3],
+    pv_fryer_zona2: row[4],
+    sv_zona1: row[5],
+    sv_zona2: row[6]
+  }));
+
+  return ContentService
+    .createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
+}
