@@ -395,7 +395,7 @@ function parseTimestamp(str) {
         return;
       }
       const rows = filtered.map(r => ({
-        "Timestamp": new Date(r.timestamp).toLocaleString("id-ID"),
+       "Timestamp": r.timestamp,
         "PV Zona 1": r.pv_zona1,
         "PV Fryer Z1": r.pv_fryer_zona1,
         "PV Zona 2": r.pv_zona2,
@@ -409,7 +409,7 @@ function parseTimestamp(str) {
       const cols = Object.keys(rows[0]).map(key => ({ wch: Math.max(key.length, 15) }));
       ws['!cols'] = cols;
       const dateStr = document.getElementById("dateFrom").value;
-      XLSX.writeFile(wb, `Log_Fryer_Line7_${dateStr}.xlsx`);
+      XLSX.writeFile(wb, `Log_Fryer_Line4_${dateStr}.xlsx`);
     }
 
     chartZ1 = initChart("chartZ1", "PV Zona 1", C.sv, C.pvZ1);
