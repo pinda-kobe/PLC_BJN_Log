@@ -387,9 +387,9 @@ function parseTimestamp(str) {
       const to = new Date(document.getElementById("dateTo").value);
       to.setHours(23, 59, 59);
       const filtered = allData.filter(r => {
-        const t = new Date(r.timestamp);
-        return t >= from && t <= to;
-      });
+    const t = parseTimestamp(r.timestamp);
+    return t >= from && t <= to;
+});
       if (filtered.length === 0) {
         alert("Tidak ada data untuk rentang tanggal ini.");
         return;
